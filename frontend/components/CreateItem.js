@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Mutation } from "react-apollo";
 import gql from "graphql-tag";
-import Router from 'next/router';
+import Router from "next/router";
 import Form from "./styles/Form";
 import formatMoney from "../lib/formatMoney";
 import Error from "./ErrorMessage";
@@ -14,7 +14,7 @@ const CREATE_ITEM_MUTATION = gql`
     $image: String
     $largeImage: String
   ) {
-    CreateItem(
+    createItem(
       title: $title
       description: $description
       price: $price
@@ -31,7 +31,7 @@ class CreateItem extends Component {
     title: "default title",
     description: "default description",
     image: "default.jpg",
-    largeItem: "large-default.jpg",
+    largeImage: "large-default.jpg",
     price: 1000
   };
 
@@ -39,6 +39,32 @@ class CreateItem extends Component {
     const { name, type, value } = e.target;
     const val = type === "number" ? parseFloat(value) : value;
     this.setState({ [name]: val });
+  };
+
+  uploadFile = async e => {
+    console.log("uploading file...");
+    const files = e.target.files;
+    const data = new FormData();
+    data.append("file", files[0]);
+    // this is for the cloudinary api. it needs the upload preset and then
+    // the name of whatever preset you're using. if you change the name of your preset
+    // on cloudinary, you need to change it here too. right now it's named 'sickfits'
+    data.append("upload_preset", "sickfits");
+
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/dhotqaxtj/image/upload",
+      {
+        // cloudinary upload endpoint
+        method: "POST", // api method
+        body: data // what is being sent.
+      }
+    );
+    const file = await res.json();
+    console.log(file);
+    this.setState({
+      image: file.secure_url,
+      largeImage: file.eager[0].secure_url
+    });
   };
 
   render() {
@@ -53,13 +79,28 @@ class CreateItem extends Component {
               const res = await createItem();
               // send user to the single item page
               Router.push({
-                  pathname: '/item',
-                  query: { id: res.data.createItem.id },
-              })
+                pathname: "/item",
+                query: { id: res.data.createItem.id }
+              });
             }}
           >
             <Error error={error} />
             <fieldset disabled={loading} aria-busy={loading}>
+              <label htmlFor="file">
+                Image
+                <input
+                  type="file"
+                  id="file"
+                  name="file"
+                  placeholder="File"
+                  required
+                  onChange={this.uploadFile}
+                />
+                {this.state.image && (
+                  <img src={this.state.image} alt="Upload Preview" />
+                )}
+              </label>
+
               <label htmlFor="title">
                 Title
                 <input
