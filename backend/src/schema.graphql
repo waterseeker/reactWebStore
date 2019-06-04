@@ -2,10 +2,14 @@
 
 # import * from './generated/prisma.graphql'
 
+# mutationName (parameters that get passed to the mutation): type the mutation is going to return.... ! = required
 type Mutation {
     createItem(title: String, description: String, price: Int, image: String, largeImage: String): Item!
+    updateItem(id: ID!, title: String, description: String, price: Int): Item!
+    deleteItem(id: ID!): Item
 }
 
 type Query {
     items: [Item]!
+    item(where: ItemWhereUniqueInput!): Item
 }
